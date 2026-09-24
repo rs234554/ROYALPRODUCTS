@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RoyalNova Store</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f7fb;color:#171717}
+header{background:#111;color:#fff;padding:18px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5}
+.logo{font-size:22px;font-weight:800}.cart{background:#fff;color:#111;border:0;border-radius:20px;padding:9px 14px;font-weight:700}
+.hero{padding:28px 16px;background:linear-gradient(135deg,#171717,#3a3a3a);color:#fff}.hero h1{margin:0 0 8px}.hero p{margin:0;color:#ddd}
+.wrap{max-width:1100px;margin:auto;padding:18px 16px}.search{width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}.card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 10px #00000012}
+.card img{width:100%;height:180px;object-fit:cover;background:#eee}.pad{padding:13px}.price{font-size:19px;font-weight:800}.muted{color:#777;font-size:13px}.btn{border:0;background:#111;color:#fff;padding:11px 14px;border-radius:9px;font-weight:700;cursor:pointer;width:100%;margin-top:10px}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:10;padding:20px;overflow:auto}.box{background:#fff;max-width:520px;margin:30px auto;border-radius:15px;padding:20px}
+input,textarea{width:100%;padding:12px;margin:7px 0 12px;border:1px solid #ddd;border-radius:9px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.close{background:#eee;color:#111}.qr{width:180px;height:180px;object-fit:contain;border:1px solid #ddd;display:block;margin:10px auto}
+.empty{text-align:center;padding:30px;color:#777}
+</style></head>
+<body>
+<header><div class="logo">RoyalNova</div><button class="cart" onclick="openCart()">🛒 Cart (<span id="count">0</span>)</button></header>
+<section class="hero"><div class="wrap"><h1>Welcome to RoyalNova</h1><p>Shop your favourite products and pay directly by UPI.</p></div></section>
+<main class="wrap"><input id="search" class="search" placeholder="Search products..." oninput="render()"><div id="products" class="grid"></div></main>
+
+<div id="cartModal" class="modal"><div class="box">
+<div class="row"><h2>Your Cart</h2><button class="btn close" onclick="closeModal('cartModal')">Close</button></div>
+<div id="cartItems"></div><hr><div class="row"><b>Total</b><b>₹<span id="total">0</span></b></div>
+<button class="btn" onclick="checkout()">Proceed to Payment</button>
+</div></div>
+
+<div id="payModal" class="modal"><div class="box">
+<div class="row"><h2>Checkout</h2><button class="btn close" onclick="closeModal('payModal')">Close</button></div>
+<form onsubmit="pay(event)">
+<input id="name" required placeholder="Customer name">
+<input id="phone" required type="tel" placeholder="Mobile number">
+<textarea id="address" required placeholder="Delivery address"></textarea>
+<p><b>Amount: ₹<span id="payTotal">0</span></b></p>
+<p class="muted">Pay to UPI ID: <b>Royalnovaenter@naviaxis</b></p>
+<button class="btn" type="submit">💳 Pay Now with UPI</button>
+</form>
+</div></div>
+
+<script>
+const UPI="Royalnovaenter@naviaxis";
+const defaultProducts=[
+{id:1,name:"RoyalNova Product 1",price:499,image:"https://placehold.co/600x500?text=Product+1",desc:"Premium product"},
+{id:2,name:"RoyalNova Product 2",price:799,image:"https://placehold.co/600x500?text=Product+2",desc:"Quality product"},
+{id:3,name:"RoyalNova Product 3",price:999,image:"https://placehold.co/600x500?text=Product+3",desc:"Best seller"}
+];
+let products=JSON.parse(localStorage.getItem("rn_products")||"null")||defaultProducts;
+let cart=JSON.parse(localStorage.getItem("rn_cart")||"[]");
+function money(n){return Number(n).toLocaleString("en-IN")}
+function save(){localStorage.setItem("rn_cart",JSON.stringify(cart));document.getElementById("count").textContent=cart.reduce((a,b)=>a+b.qty,0)}
+function render(){
+ let q=document.getElementById("search").value.toLowerCase();
+ document.getElementById("products").innerHTML=products.filter(p=>(p.name+" "+p.desc).toLowerCase().includes(q)).map(p=>`
+ <article class="card"><img src="${p.image}" onerror="this.src='https://placehold.co/600x500?text=Product'"><div class="pad">
+ <h3>${p.name}</h3><div class="muted">${p.desc||""}</div><p class="price">₹${money(p.price)}</p>
+ <button class="btn" onclick="add(${p.id})">Add to Cart</button></div></article>`).join("")||'<div class="empty">No products found.</div>';
+}
+function add(id){let x=cart.find(i=>i.id===id);x?x.qty++:cart.push({id,qty:1});save();alert("Added to cart");}
+function openCart(){renderCart();document.getElementById("cartModal").style.display="block"}
+function closeModal(id){document.getElementById(id).style.display="none"}
+function total(){return cart.reduce((s,i)=>{let p=products.find(x=>x.id===i.id);return s+(p?p.price*i.qty:0)},0)}
+function renderCart(){document.getElementById("cartItems").innerHTML=cart.length?cart.map(i=>{let p=products.find(x=>x.id===i.id);return `<div class="row"><span>${p.name} × ${i.qty}</span><b>₹${money(p.price*i.qty)}</b></div><button class="btn close" onclick="removeItem(${i.id})">Remove</button><hr>`}).join(""):"<div class='empty'>Cart is empty.</div>";document.getElementById("total").textContent=money(total())}
+function removeItem(id){cart=cart.filter(x=>x.id!==id);save();renderCart()}
+function checkout(){if(!cart.length)return alert("Cart is empty");document.getElementById("payTotal").textContent=money(total());closeModal("cartModal");document.getElementById("payModal").style.display="block"}
+function pay(e){e.preventDefault();let amount=total(),name=document.getElementById("name").value,phone=document.getElementById("phone").value,address=document.getElementById("address").value;
+let order={id:"RN"+Date.now(),date:new Date().toLocaleString(),name,phone,address,items:cart,total:amount,status:"Payment Pending"};
+let orders=JSON.parse(localStorage.getItem("rn_orders")||"[]");orders.push(order);localStorage.setItem("rn_orders",JSON.stringify(orders));
+let url=`upi://pay?pa=${encodeURIComponent(UPI)}&pn=${encodeURIComponent("RoyalNova")}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(order.id)}`;
+window.location.href=url;
+setTimeout(()=>alert("UPI payment screen opened. Complete payment in your UPI app. Order ID: "+order.id),800);
+cart=[];save();
+}
+render();save();
+</script></body></html>
