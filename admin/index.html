@@ -1,1 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoyalNova Admin</title>
+<style>
+body{margin:0;font-family:Arial;background:#f5f6fa;color:#111}
+header{background:#111;color:white;padding:18px;font-size:22px;font-weight:bold}
+.container{max-width:900px;margin:auto;padding:20px}
+.box{background:white;padding:20px;margin-bottom:20px;border-radius:12px}
+input,textarea,select{width:100%;padding:12px;margin:7px 0 12px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box}
+button{background:#111;color:white;border:0;padding:12px 18px;border-radius:8px;font-weight:bold}
+.delete{background:#c62828}
+.product{border:1px solid #ddd;padding:12px;border-radius:10px;margin:10px 0}
+.product img{width:100%;max-width:180px;height:120px;object-fit:cover;border-radius:8px}
+.muted{color:#777}
+</style>
+</head>
 
+<body>
+
+<header>RoyalNova Admin Panel</header>
+
+<div class="container">
+
+<div id="login" class="box">
+<h2>Admin Login</h2>
+<input id="password" type="password" placeholder="Enter password">
+<button onclick="login()">Login</button>
+<p class="muted">Password: admin123</p>
+</div>
+
+<div id="panel" style="display:none">
+
+<div class="box">
+<h2>Add Product</h2>
+
+<input id="name" placeholder="Product name">
+<input id="price" type="number" placeholder="Price">
+<input id="image" placeholder="Product image URL">
+<textarea id="description" placeholder="Product description"></textarea>
+
+<button onclick="addProduct()">Add Product</button>
+</div>
+
+<div class="box">
+<h2>Products</h2>
+<div id="products"></div>
+</div>
+
+<div class="box">
+<h2>Orders</h2>
+<div id="orders"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+function login(){
+let p=document.getElementById("password").value;
+
+if(p==="admin123"){
+document.getElementById("login").style.display="none";
+document.getElementById("panel").style.display="block";
+showProducts();
+showOrders();
+}else{
+alert("Wrong password");
+}
+}
+
+let products=JSON.parse(localStorage.getItem("rn_products")||"null")||[
+{
+id:1,
+name:"RoyalNova Product 1",
+price:499,
+image:"https://placehold.co/600x500?text=Product+1",
+description:"Premium product"
+},
+{
+id:2,
+name:"RoyalNova Product 2",
+price:799,
+image:"https://placehold.co/600x500?text=Product+2",
+description:"Quality product"
+},
+{
+id:3,
+name:"RoyalNova Product 3",
+price:999,
+image:"https://placehold.co/600x500?text=Product+3",
+description:"Best seller"
+}
+];
+
+function saveProducts(){
+localStorage.setItem("rn_products",JSON.stringify(products));
+}
+
+function addProduct(){
+
+let name=document.getElementById("name").value;
+let price=Number(document.getElementById("price").value);
+let image=document.getElementById("image").value;
+let description=document.getElementById("description").value;
+
+if(!name||!price){
+alert("Product name and price required");
+return;
+}
+
+if(!image){
+image="https://placehold.co/600x500?text=Product";
+}
+
+products.push({
+id:Date.now(),
+name:name,
+price:price,
+image:image,
+description:description
+});
+
+saveProducts();
+
+document.getElementById("name").value="";
+document.getElementById("price").value="";
+document.getElementById("image").value="";
+document.getElementById("description").value="";
+
+showProducts();
+
+alert("Product added");
+}
+
+function deleteProduct(id){
+
+products=products.filter(p=>p.id!==id);
+
+saveProducts();
+
+showProducts();
+}
+
+function showProducts(){
+
+let box=document.getElementById("products");
+
+box.innerHTML="";
+
+products.forEach(p=>{
+
+box.innerHTML+=`
+<div class="product">
+
+<img src="${p.image}">
+
+<h3>${p.name}</h3>
+
+<b>₹${p.price}</b>
+
+<p>${p.description||""}</p>
+
+<button class="delete" onclick="deleteProduct(${p.id})">
+Delete
+</button>
+
+</div>
+`;
+
+});
+}
+
+function showOrders(){
+
+let orders=JSON.parse(localStorage.getItem("rn_orders")||"[]");
+
+let box=document.getElementById("orders");
+
+if(orders.length===0){
+box.innerHTML="<p class='muted'>No orders yet.</p>";
+return;
+}
+
+box.innerHTML="";
+
+orders.forEach(o=>{
+
+box.innerHTML+=`
+<div class="product">
+
+<b>Order ID:</b> ${o.id}
+
+<p><b>Customer:</b> ${o.name}</p>
+
+<p><b>Mobile:</b> ${o.phone}</p>
+
+<p><b>Address:</b> ${o.address}</p>
+
+<p><b>Total:</b> ₹${o.total}</p>
+
+<p><b>Status:</b> ${o.status}</p>
+
+</div>
+`;
+
+});
+
+}
+
+</script>
+
+</body>
+</html>
